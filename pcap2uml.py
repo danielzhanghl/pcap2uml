@@ -49,7 +49,7 @@ class Participant(object):
             if mode_term_orig != None:
                 self.name +="_"+mode_term_orig
         else:
-            if DEBUG: print "unknown participant: ", participant
+            if DEBUG: print("unknown participant: %s"%participant)
             self.name = participant
             unkn_participants[participant]=""
 #        participants.get(frame.ip.src, frame.ip.src), participants
@@ -213,7 +213,8 @@ class Message_SIP(Message):
                     
     
     def has_sdp(self):
-        return (self.content_length > 0) & (self.content_type == "application/sdp")
+        #print (" content_length: %s content_type: %s" % (self.content_length,self.content_type))
+        return (int(self.content_length) > 0) & (self.content_type == "application/sdp")
 
     def sdp_parse(self,layer):
 
@@ -315,8 +316,8 @@ class UML(object):
         if DEBUG:
             tmp = proto_formatter[MSG.proto].get(style if (style) else MSG.draw_key,
                                              proto_formatter[MSG.proto]["request"])
-            print "drawing frame: ",MSG.frame_num
-            print tmp
+            print("drawing frame: %s"%MSG.frame_num)
+            print(tmp)
         
         try:
             draw = proto_formatter[MSG.proto].get(style if (style) else MSG.draw_key,
@@ -324,10 +325,11 @@ class UML(object):
                                                  line = line_style,
                                                  color=color,
                                                  **params)
-        except KeyError, e:
-            print 'I got a KeyError - reason "%s"' % str(e)
-            print 'Check template: %s' % proto_formatter[MSG.proto].get(style if (style) else MSG.draw_key,
-                                             proto_formatter[MSG.proto]["request"])
+        #except KeyError, e:
+        except KeyError as e:
+            print ('I got a KeyError - reason "%s"' % str(e))
+            print ('Check template: %s' % proto_formatter[MSG.proto].get(style if (style) else MSG.draw_key,
+                                             proto_formatter[MSG.proto]["request"]))
 
         else:
             self.uml += self.normalize(draw)
@@ -353,11 +355,11 @@ def process_cap(cap_file, cap_filter, uml_file):
         sys.stderr.write("source pcap file is not found %s \n",sys.exc_info())
         return 2
 
-    print program_version_string
+    print (program_version_string)
     
     uml_legend = uml_comment_template.format(datetime=datetime.now(),prog=program_version_string,cap_file=cap_file,cap_filter=cap_filter,dir=os.getcwd())
     
-#    print uml_comment 
+#    print(uml_comment)
     
     uml = UML(uml_intro.format(comment=uml_legend))
 
@@ -377,14 +379,16 @@ def process_cap(cap_file, cap_filter, uml_file):
 
                     SIP.frame_num = frame.number
                     if DEBUG:
-                        print "SIP frame: ",i
-                        print " src: ",frame.ip.src, " dst: ", frame.ip.dst, " proto: ", frame.ip.proto
-                        print " call-id: ", frame.sip.call_id
+                        print ("SIP frame: %s"%i)
+                        #print (" src: ",frame.ip.src, " dst: ", frame.ip.dst, " proto: ", frame.ip.proto)
+                        print (" src: %s dst: %s proto: %s"%(frame.ip.src, frame.ip.dst, frame.ip.proto))
+                        print (" call-id: %s"%frame.sip.call_id)
 
 
 #                    sip_content_len = SIP.content_length
 #                    sip_content_type = SIP.content_type
 
+                    #print("%s" % layer)
                     if SIP.has_sdp():
                         SIP.sdp_parse(layer)
                     
@@ -422,7 +426,8 @@ def process_cap(cap_file, cap_filter, uml_file):
                             if ( time_diff.seconds > timeframe_timeout ):
                                 uml.delay(time_diff.seconds)
                         
-                        last_frame_timestamp = frame.sniff_timestamp
+                        #last_frame_timestamp = frame.sniff_timestamp
+                        last_frame_timestamp = float(frame.sniff_timestamp)
 
                         sip_calls.call_proceeded(SIP.msg_digest)
 
@@ -439,7 +444,7 @@ def process_cap(cap_file, cap_filter, uml_file):
                         
 
 
-                        if DEBUG: print "..."
+                        if DEBUG: print ("...")
 
         elif 'diameter' in frame:
             for layer in frame.layers:
@@ -486,13 +491,13 @@ def process_cap(cap_file, cap_filter, uml_file):
 
     uml.dump_to_file(uml_file)
 
-    if DEBUG: print "all calls processed: ",sip_calls.calls_processed
+    if DEBUG: print( "all calls processed: %s "%sip_calls.calls_processed)
 
     if len(unkn_participants)>0:
-        print "all unknown particiapnts:"
-        print unkn_participants
+        print( "all unknown particiapnts:")
+        print( unkn_participants)
 
-    print "uml output wrote into file ",uml_file
+    print( "uml output wrote into file %s"%uml_file)
 
 #    print "to visualize it, run: java -jar plantuml.jar -tpng ",uml_file
 
@@ -530,8 +535,9 @@ def main(argv=None):
 
         # process options
         (opts, args) = parser.parse_args(argv)
+        print(opts.verbose)
 
-        if opts.verbose > 0:
+        if opts.verbose and int(opts.verbose) > 0:
             print("verbosity level = %d" % opts.verbose)
         if opts.cap_file:
             print("infile = %s" % opts.cap_file)
@@ -553,9 +559,11 @@ def main(argv=None):
             print("render format = %s" % opts.render_format)
             
 
-    except Exception, e:
+    #except Exception, e:
+    except Exception as e:
         indent = len(program_name) * " "
         exc_tb = sys.exc_info()
+        print(exc_tb)
         sys.stderr.write(program_name + ": " + repr(e) + "\n")
         sys.stderr.write(indent + "  for help use --help \n")
         return 2
@@ -569,9 +577,9 @@ def main(argv=None):
         plantuml_format = "-t"+opts.render_format
 #        print plantuml_format
         exec_string = JAVA_BIN+" -jar "+plantuml_jar+" "+plantuml_format+" "+opts.uml_file
-        print "rendering UML with %s" % exec_string
+        print ("rendering UML with %s" % exec_string)
         subprocess.call([JAVA_BIN, "-jar", plantuml_jar,plantuml_format,opts.uml_file])
-        print "%s output wrote into place of source uml file " % opts.render_format    
+        print( "%s output wrote into place of source uml file " % opts.render_format    )
 
 
 if __name__ == "__main__":

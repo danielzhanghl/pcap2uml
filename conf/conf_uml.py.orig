@@ -11,9 +11,17 @@
 # this list is unordered
 
 participants ={
-    '90.0.0.126':'ONT_A'
-    ,'90.0.0.19':'SIP_SERVER'
-    ,'90.0.0.117':'ONT_B'
+    '1.1.1.1':'TAS'
+    ,'2.2.2.2':'CSCF'
+# for example, one logical DRA has two instances
+    ,'3.3.3.3':'DRA'
+    ,'4.4.4.4':'DRA'
+# GT
+    ,'79111111111':'MSS'
+    ,'79222222222':'OCS'
+    ,'79333333333':'HLR'
+# TAS GT in addition to it's IP
+    ,'79444444444':'TAS'
     }
 
 
@@ -29,11 +37,18 @@ uml_intro ="""
 '/
 hide unlinked
 
-participant "ONT_A"
+participant "UE-A" as 1.2.1.2
 
-participant "SIP_SERVER"
+participant "UE-B" as 1.2.1.3
 
-participant "ONT_B"
+participant "CSCF \\n 2.2.2.2" as CSCF
+participant "DRA" as DRA
+
+participant "TAS \\n 4.4.4.4 \\n 7944444444" as TAS
+
+participant "OCS \\n 79222222222" as OCS
+
+participant "HLR" as HLR
 
 autonumber "<b>[000]"
 
@@ -44,7 +59,11 @@ autonumber "<b>[000]"
 
 
 uml_comment_template = """
+source file: {cap_file}
+current dir: {dir}
+filter: {cap_filter}
 generated at: {datetime}
+using: {prog}
 """
 
 uml_end="""
@@ -65,7 +84,7 @@ default_uml_file="./out.uml"
 
 # plantuml output
 JAVA_BIN = 'java'
-plantuml_jar='/pcap2uml/plantuml/plantuml.jar'
+plantuml_jar='/home/smile/soft/plantuml/plantuml.jar'
 
 
 # FOR SIP ONLY
@@ -152,8 +171,8 @@ proto_formatter = {
 uml_draw_keys = ['local','gsm_old_localValue','method','cmd_code','request_method']
 
 proto_msg_skip = {"sip": {
-                          "method" : ['PRACK','OPTIONS']
-                          ,"status_code" : ['100','183']
+                          "method" : ['PRACK', 'ACK']
+                          ,"status_code" : ['100','180','183']
                           }
                   ,"diameter" : {
                                  "cmd_code": ['280']
